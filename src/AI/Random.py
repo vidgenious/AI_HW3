@@ -95,15 +95,27 @@ class AIPlayer(Player):
     #Return: The Move to be made
     ##
     def getMove(self, currentState):
-        moves = listAllLegalMoves(currentState)
-        selectedMove = moves[random.randint(0,len(moves) - 1)];
+        allMoves = listAllLegalMoves(currentState)
+        nextMoves = []
 
-        #don't do a build move if there are already 3+ ants
-        numAnts = len(currentState.inventories[currentState.whoseTurn].ants)
-        while (selectedMove.moveType == BUILD and numAnts >= 3):
-            selectedMove = moves[random.randint(0,len(moves) - 1)];
+        # create list of GameState objects that result from
+        # making each legal move
+        for move in allMoves:
+            nextMoves.append(getNextState(currentState, move))
+
+        listNodes = []
+        qualityNum = -1  # arbitrarily low
+        # TODO: Use nextMoves and currentState to create nodes
+        # and put nodes into listNodes
+
+        # find node with highest utility
+        for node in listNodes:
+            if node.utility() > qualityNum:
+                bestMove = node
+                qualityNum = node.utility()
+
             
-        return selectedMove
+        return bestMove
     
     ##
     #getAttack
