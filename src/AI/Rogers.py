@@ -54,7 +54,7 @@ class AIPlayer(Player):
     def getWorkersScore(self, currentState, workers, playerID, myInv):
         if len(workers) == 0:
             return 0.0
-        if len(workers) > 3:
+        if len(workers) > 2:
             return 0.0
         myFood = getConstrList(currentState, 2, (FOOD,))
         #incentivises building more workers
@@ -90,6 +90,11 @@ class AIPlayer(Player):
                             approxDist(myInv.getTunnels()[0].coords, worker.coords)]))
         return total_score
     
+    #Works for <= 20 workers
+    def getEnemyScore(self, currentState, playerID):
+        enemyAnts = getAntList(currentState, (playerID + 1) % 2, (QUEEN, WORKER, SOLDIER, DRONE, R_SOLDIER))
+        return .5 - (0.025 * len(enemyAnts))
+
     #returns 0.0-0.16
     def getDronesScore(self, currentState, drones, playerID, myInv):
         #incentivises only 1 drone
@@ -111,11 +116,11 @@ class AIPlayer(Player):
             if len(enemyHunterAnts) != 0:
                 total_score += 0.05 * (1/(1+min([approxDist(enemy.coords, drone.coords) for enemy in enemyHunterAnts])))
                 continue
-            if len(enemyDroneAnts) != 0:
-                total_score += 0.05 * (1/(1+min([approxDist(enemy.coords, drone.coords) for enemy in enemyDroneAnts])))
-                continue
             if len(enemyWorkerAnts) != 0:
                 total_score += 0.05 * (1/(1+min([approxDist(enemy.coords, drone.coords) for enemy in enemyWorkerAnts])))
+                continue
+            if len(enemyDroneAnts) != 0:
+                total_score += 0.05 * (1/(1+min([approxDist(enemy.coords, drone.coords) for enemy in enemyDroneAnts])))
                 continue
             total_score += 0.05
         return total_score
@@ -132,8 +137,10 @@ class AIPlayer(Player):
 
         for soldier in soldiers:
             if len(enemyDroneAnts) != 0:
-                total_score += 0.05 * (1/(1+min([approxDist(enemy.coords, soldier.coords) for enemy in enemyDroneAnts])))
+                total_score += 0.01 * (1/(1+min([approxDist(enemy.coords, soldier.coords) for enemy in enemyDroneAnts])))
                 continue
+            else:
+                total_score += 0.01
 
         return total_score
 
@@ -161,7 +168,8 @@ class AIPlayer(Player):
         droneScore = self.getDronesScore(currentState, droneAnts, me, myInv)
         soldierAnts = getAntList(currentState, me, (SOLDIER,))
         soldierScore = self.getSoldierScore(currentState, soldierAnts, me, myInv)
-        return foodScore + workersScore + queenScore + droneScore + soldierScore + penalty
+        enemyScore = self.getEnemyScore(currentState, me)
+        return foodScore + workersScore + queenScore + droneScore + soldierScore + penalty + enemyScore
 
     def bestMove(self, node_array):
         best_node = None
@@ -274,7 +282,7 @@ class AIPlayer(Player):
     ##
     def getAttack(self, currentState, attackingAnt, enemyLocations):
         #Attack a random enemy.
-        return enemyLocations[random.randint(0, len(enemyLocations) - 1)]
+        return enemyLocations[0] 
 
     ##
     #registerWin
