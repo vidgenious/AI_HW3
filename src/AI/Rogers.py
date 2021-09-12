@@ -57,25 +57,33 @@ class AIPlayer(Player):
         if len(workers) > 3:
             return 0.0
         myFood = getConstrList(currentState, 2, (FOOD,))
-        #print("Food length: " + str(len(myFood)))
-        total_score = .05 * len(workers)
+        #incentivises building more workers
+        total_score = .055 * len(workers)
+
+        #goes through workers
         for worker in workers:
+            #when workers not carrying
             if not worker.carrying:
-                #print("Not Carrying")
+                #disincentivises standing on anthills or tunnels
                 if approxDist(myInv.getAnthill().coords, worker.coords) == 0 or \
                         approxDist(myInv.getTunnels()[0].coords, worker.coords) == 0:
                     total_score -= 0.005
+                #incentivises being on food
                 if min([approxDist(food.coords, worker.coords) for food in myFood]) == 0:
                     total_score += 0.02
+                #incentivises moving towards food
                 else:
-                    #print("Added Score: " + str(0.025 * 1.0/(1.0 + min([approxDist(food.coords, worker.coords) for food in myFood]))))
                     total_score += 0.02 * 1.0/(1.0 + min([approxDist(food.coords, worker.coords) for food in myFood]))
+            #when carrying food
             else:
+                #disincentifises standing on food
                 if min([approxDist(food.coords, worker.coords) for food in myFood]) == 0:
                     total_score -= 0.005
+                #incentifises moving on tunnel or anthill
                 if approxDist(myInv.getAnthill().coords, worker.coords) == 0 or \
                         approxDist(myInv.getTunnels()[0].coords, worker.coords) == 0:
                     total_score += 0.05
+                #incentifizes moving towards tunnel or anthill
                 else:
                     total_score += 0.025 + 0.02 * 1.0/(1.0 + \
                         min([approxDist(myInv.getAnthill().coords, worker.coords), \
@@ -84,15 +92,18 @@ class AIPlayer(Player):
     
     #returns 0.0-0.16
     def getDronesScore(self, currentState, drones, playerID, myInv):
+        #incentivises only 1 drone
         if len(drones) == 0 or len(drones) > 1:
             return 0.0
+        #gets enemy ants
         enemySoldierAnts = getAntList(currentState, (playerID + 1) % 2, (SOLDIER,))
         enemyHunterAnts = getAntList(currentState, (playerID + 1) % 2, (R_SOLDIER,))
         enemyWorkerAnts = getAntList(currentState, (playerID + 1) % 2, (WORKER,))
         enemyDroneAnts = getAntList(currentState, (playerID + 1) % 2, (DRONE,))
         enemyFood = getConstrList(currentState, 2, (FOOD,))
         
-        total_score = 0.11 * len(drones)
+        total_score = 0.13 * len(drones)
+        #moves drones towards all ants except soldiers
         for drone in drones:
             if len(enemySoldierAnts) != 0:
                 #sigmoid
