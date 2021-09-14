@@ -11,11 +11,6 @@ from AIPlayerUtils import *
 import math
 import unittest
 
-
-"""
-Lore of RogersWasTheChosenOne
-"""
-
 ##
 #AIPlayer
 #Description: The responsbility of this class is to interact with the game by
@@ -45,14 +40,12 @@ class AIPlayer(Player):
     #Parameters:
     #   foodCount - the amount of food the agent has
     #
-    #Returns either 0.0 - 0.55 or 1.0 if theres a winning move
+    #Returns either 0.0 - 0.5 or 1.0 if theres a winning move
     def getFoodScore(self, foodCount):
         if foodCount == 11:
             return 1.0
-        elif foodCount == 1:
-            return 0.1
         else:
-            return 0.1 + 0.05 * (foodCount-1)
+            return 0.05 * (foodCount)
 
         
     #getQueensScore
@@ -83,21 +76,21 @@ class AIPlayer(Player):
     #   myInv - the inventory of the agent
     #   
     #returns sum of 
-    #0.0 - 0.08 based on amount of workers
+    #0.0 - 0.06 based on amount of workers
     #-0.005 if ant is standing on anthill or tunnel
     #0.0-0.02 * num ants if not carrying food
     #0.015 - 0.035 * num ants if carrying food
     #min is 0.0
-    #theoretical max is 0.08 + 0.035 * 2 = 0.15
+    #theoretical max is 0.12 + 0.035 * 2 = 0.19
     def getWorkersScore(self, currentState, workers, myInv):
         #makes sure there is only 0-2 workers
         if len(workers) == 0:
             return 0.0
-        if len(workers) > 2:
+        if len(workers) > 1:
             return 0.0
         myFood = getConstrList(currentState, 2, (FOOD,))
         #incentivises building more workers
-        total_score = .04 * len(workers)
+        total_score = .06 * len(workers)
 
         #goes through workers
         for worker in workers:
@@ -143,7 +136,7 @@ class AIPlayer(Player):
     #Negative amounts are absurdly unlikely
     def getEnemyScore(self, currentState, playerID):
         enemyAnts = getAntList(currentState, (playerID + 1) % 2, (QUEEN, WORKER, SOLDIER, DRONE, R_SOLDIER))
-        return .8 - (0.025 * len(enemyAnts))
+        return .85 - (0.025 * len(enemyAnts))
 
     
     #getDronesScore
@@ -165,7 +158,7 @@ class AIPlayer(Player):
         if len(drones) == 0 or len(drones) > 1:
             return 0.0
         #gets enemy ants
-        enemySoldierAnts = getAntList(currentState, (playerID + 1) % 2, (SOLDIER,))
+        #enemySoldierAnts = getAntList(currentState, (playerID + 1) % 2, (SOLDIER,))
         enemyHunterAnts = getAntList(currentState, (playerID + 1) % 2, (R_SOLDIER,))
         enemyWorkerAnts = getAntList(currentState, (playerID + 1) % 2, (WORKER,))
         enemyDroneAnts = getAntList(currentState, (playerID + 1) % 2, (DRONE,))
@@ -175,9 +168,6 @@ class AIPlayer(Player):
         #priority is R_SOLDIERS, WORKERS, THEN DRONES
         #avoids drones
         for drone in drones:
-            if len(enemySoldierAnts) != 0:
-                #sigmoid
-                total_score += 0.04 * (1/(1 + math.exp(-(min([approxDist(enemy.coords, drone.coords) for enemy in enemySoldierAnts])-2))))
             if len(enemyHunterAnts) != 0:
                 total_score += 0.04 * (1/(1+min([approxDist(enemy.coords, drone.coords) for enemy in enemyHunterAnts])))
                 continue
@@ -211,6 +201,7 @@ class AIPlayer(Player):
             return 0.0
         # gets enemy drones
         enemyDroneAnts = getAntList(currentState, (playerID + 1) % 2, (DRONE,))
+        enemyQueenAnts = getAntList(currentState, (playerID + 1) % 2, (QUEEN,))
 
         #rewards haveing soldier
         total_score = 0.15 * len(soldiers)
@@ -220,6 +211,8 @@ class AIPlayer(Player):
             if len(enemyDroneAnts) != 0:
                 total_score += 0.01 * (1/(1+min([approxDist(enemy.coords, soldier.coords) for enemy in enemyDroneAnts])))
                 continue
+            elif len(enemyQueenAnts) != 0:
+                total_score += 0.01 * (1/(1+approxDist(soldier.coords, getEnemyInv(None, currentState).getAnthill().coords)))
             else:
                 total_score += 0.01
 
@@ -236,8 +229,9 @@ class AIPlayer(Player):
     def utility(self, currentState, move):
         penalty = 0.0
         #penalizes standing state
-        if move != None and move.moveType == MOVE_ANT and len(move.coordList) == 1:
-            penalty -= 1.0
+        if move != None and move.moveType == MOVE_ANT and len(move.coordList) == 1 \
+                and getAntAt(currentState, move.coordList[-1]).type == WORKER:
+            return 0.0
         #get necessary variables
         me = currentState.whoseTurn
         myInv = getCurrPlayerInventory(currentState)
@@ -250,6 +244,8 @@ class AIPlayer(Player):
         workersScore = self.getWorkersScore(currentState, workerAnts, myInv)
         #gets score based on queens position
         queenAnts = getAntList(currentState, me, (QUEEN,))
+        if len(queenAnts) == 0:
+            return 1.0
         queenScore = self.getQueenScore(currentState, queenAnts[0], myInv)
         #gets score based on drones position
         droneAnts = getAntList(currentState, me, (DRONE,))
@@ -260,7 +256,7 @@ class AIPlayer(Player):
         #gets score based on enemies ants
         enemyScore = self.getEnemyScore(currentState, me)
         #returns total score scaled to meet requirements of homework
-        return 0.56 * (foodScore + workersScore + queenScore + droneScore + soldierScore + penalty + enemyScore)
+        return 0.54 * (foodScore + workersScore + queenScore + droneScore + soldierScore + penalty + enemyScore)
 
 
     #bestMove
@@ -274,8 +270,6 @@ class AIPlayer(Player):
     def bestMove(self, nodeArray):
         best_node = None
         for node in nodeArray:
-            if node["move"].moveType == MOVE_ANT and len(node["move"].coordList) == 1:
-                continue
             if best_node == None:
                 best_node = node
                 continue
@@ -350,7 +344,7 @@ class AIPlayer(Player):
     #Return: The Move to be made
     ##
     def getMove(self, currentState):
-        print("Current Utility: " + str(self.utility(currentState, None)))
+        print("Utility: " + str(self.utility(currentState, None)))
         allMoves = listAllLegalMoves(currentState)
         nodeList = []
 
@@ -449,8 +443,8 @@ class testRogers(unittest.TestCase):
     def testSoldierScore(self):
         newSoldier = Ant([random.randint(0,9), random.randint(0,9)], SOLDIER, 0)
         soldiers = [newSoldier]
-        self.assertEqual(self.rogers.getSoldierScore(self.state, soldiers, 0), 0.16,
-            "1 soldier/0 enemy ants did not return expected value of 0.16")
+        self.assertAlmostEqual(self.rogers.getSoldierScore(self.state, soldiers, 0), 0.15, 1,
+            "1 soldier/0 enemy ants did not return expected value of 0.15")
 
 
     ## test utility() method
