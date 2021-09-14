@@ -10,6 +10,9 @@ from GameState import *
 from AIPlayerUtils import *
 import math
 
+"""
+Lore of RogersWasTheChosenOne
+"""
 
 ##
 #AIPlayer
