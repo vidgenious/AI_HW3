@@ -9,6 +9,8 @@ from Move import Move
 from GameState import *
 from AIPlayerUtils import *
 import math
+import unittest
+
 
 """
 Lore of RogersWasTheChosenOne
@@ -35,6 +37,7 @@ class AIPlayer(Player):
     def __init__(self, inputPlayerId):
         super(AIPlayer,self).__init__(inputPlayerId, "RogersWasTheChosenOne")
 
+
     #getFoodScore
     #
     #Description: gets a score based on the amount of food
@@ -50,6 +53,7 @@ class AIPlayer(Player):
             return 0.1
         else:
             return 0.1 + 0.05 * (foodCount-1)
+
         
     #getQueensScore
     #
@@ -67,6 +71,7 @@ class AIPlayer(Player):
                 getConstrAt(currentState, queen.coords).type == FOOD):
             return 0.0
         return 0.05 * 1.0/(approxDist(queen.coords, myInv.getAnthill().coords))
+
     
     #getWorkersScore
     #
@@ -123,6 +128,7 @@ class AIPlayer(Player):
                         min([approxDist(myInv.getAnthill().coords, worker.coords), \
                             approxDist(myInv.getTunnels()[0].coords, worker.coords)]))
         return total_score
+
     
     #getEnemyScore
     #
@@ -138,6 +144,7 @@ class AIPlayer(Player):
     def getEnemyScore(self, currentState, playerID):
         enemyAnts = getAntList(currentState, (playerID + 1) % 2, (QUEEN, WORKER, SOLDIER, DRONE, R_SOLDIER))
         return .8 - (0.025 * len(enemyAnts))
+
     
     #getDronesScore
     #
@@ -182,6 +189,7 @@ class AIPlayer(Player):
                 continue
             total_score += 0.04
         return total_score
+
     
     #getSoldierScore
     #
@@ -217,6 +225,7 @@ class AIPlayer(Player):
 
         return total_score
     
+
     #utility
     #
     #Parameters:
@@ -253,6 +262,7 @@ class AIPlayer(Player):
         #returns total score scaled to meet requirements of homework
         return 0.56 * (foodScore + workersScore + queenScore + droneScore + soldierScore + penalty + enemyScore)
 
+
     #bestMove
     #
     #goes through valid moves and finds the best one
@@ -275,7 +285,6 @@ class AIPlayer(Player):
         return best_node
 
 
-    
     ##
     #getPlacement
     #
@@ -329,6 +338,7 @@ class AIPlayer(Player):
             return moves
         else:
             return [(0, 0)]
+
     
     ##
     #getMove
@@ -360,6 +370,7 @@ class AIPlayer(Player):
         
         return self.bestMove(nodeList)["move"]
     
+
     ##
     #getAttack
     #Description: Gets the attack to be made from the Player
@@ -373,6 +384,7 @@ class AIPlayer(Player):
         #Attack a random enemy.
         return enemyLocations[0] 
 
+
     ##
     #registerWin
     #
@@ -381,3 +393,88 @@ class AIPlayer(Player):
     def registerWin(self, hasWon):
         #method templaste, not implemented
         pass
+
+
+##
+#testRogers
+#Description: The responsbility of this class is to test the helper methods
+#of the Rogers AI.
+#
+#Variables:
+#   TestCase - base class used to create tests.
+##
+class testRogers(unittest.TestCase):
+
+    # Variables used for multiple tests
+    rogers = AIPlayer(0)
+    state = GameState.getBasicState()
+    rogersInv = getCurrPlayerInventory(state)
+
+
+    ## test getFoodScore() method
+    def testFoodScore(self):
+        self.assertAlmostEqual(self.rogers.getFoodScore(5), 0.3, 1,
+            "5 Food did not return 0.3")
+
+
+    ## test getQueenScore() method
+    def testQueenScore(self):
+        queen = getAntList(self.state, 0, (QUEEN,))[0]
+        self.assertEqual(self.rogers.getQueenScore(self.state, queen, self.rogersInv), 0.0,
+            "Queen is not on anthill in starting state")
+
+
+    ## test getWorkersScore() method
+    def testWorkerScore(self):
+        workers = getAntList(self.state, 0, (WORKER,))
+        self.assertEqual(self.rogers.getWorkersScore(self.state, workers, self.rogersInv), 0.0,
+            "No workers did not return expected value of 0.0")
+
+
+    ## test getEnemyScore() method
+    def testEnemyScore(self):
+        self.assertAlmostEqual(self.rogers.getEnemyScore(self.state, 1), 0.775, 3,
+            "1 enemy ant did not return expected value of 0.775")
+
+
+    ## test getDronesScore() method
+    def testDroneScore(self):
+        newDrone = Ant([random.randint(0,9), random.randint(0,9)], DRONE, 0)
+        drones = [newDrone]
+        self.assertEqual(self.rogers.getDronesScore(self.state, drones, 0), 0.14,
+            "1 drone/0 enemy ants did not return expected value of 0.14")
+
+
+    ## test getSoldierScore() method
+    def testSoldierScore(self):
+        newSoldier = Ant([random.randint(0,9), random.randint(0,9)], SOLDIER, 0)
+        soldiers = [newSoldier]
+        self.assertEqual(self.rogers.getSoldierScore(self.state, soldiers, 0), 0.16,
+            "1 soldier/0 enemy ants did not return expected value of 0.16")
+
+
+    ## test utility() method
+    def testUtility(self):
+        move = Move(MOVE_ANT, [4,4], None)
+        utility = self.rogers.utility(self.state, move)
+        self.assertGreaterEqual(utility, 0.0,
+            "Utility is less than 0.0")
+        self.assertLessEqual(utility, 1.0,
+            "Utility is greater than 1.0")
+
+
+    ## test bestMove() method
+    def testBestMove(self):
+        node = {
+            "move": Move(MOVE_ANT, [random.randint(0,9), random.randint(0,9)], None),
+            "state": self.state,
+            "depth": 1,
+            "evaluation": random.random(),
+            "parent": None
+        }
+        nodeArray = [node]
+        assert self.rogers.bestMove(nodeArray) == node
+
+
+if __name__ == '__main__':
+    unittest.main()
