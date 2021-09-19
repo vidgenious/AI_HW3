@@ -434,8 +434,8 @@ class testRogers(unittest.TestCase):
 
     ## test getEnemyScore() method
     def testEnemyScore(self):
-        self.assertAlmostEqual(self.rogers.getEnemyScore(self.state, 1), 0.775, 3,
-            "1 enemy ant did not return expected value of 0.775")
+        self.assertAlmostEqual(self.rogers.getEnemyScore(self.state, 1), 0.825, 3,
+            "1 enemy ant did not return expected value of 0.825")
 
 
     ## test getDronesScore() method
