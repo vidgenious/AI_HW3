@@ -8,7 +8,6 @@ from Ant import UNIT_STATS
 from Move import Move
 from GameState import *
 from AIPlayerUtils import *
-import math
 import unittest
 
 ##
@@ -258,7 +257,7 @@ class AIPlayer(Player):
         #gets score based on enemies ants
         enemyScore = self.getEnemyScore(currentState, me)
         #returns total score scaled to meet requirements of homework
-        return 0.54 * (foodScore + workersScore + queenScore + droneScore + penalty + enemyScore)
+        return 400 * (0.54 * (foodScore + workersScore + queenScore + droneScore + penalty + enemyScore))
 
 
     #bestMove
@@ -335,11 +334,23 @@ class AIPlayer(Player):
         else:
             return [(0, 0)]
 
-    """
+    
     def expandNode(self, node):
-        all_moves = listAllLegalMoves(node["state"])
+        allMoves = listAllLegalMoves(node["state"])
         nodeList = []
-    """
+        for move in allMoves:
+            moveState = getNextState(node["state"], move)
+            nodeDict = {
+                "move": move,
+                "state": moveState,
+                "depth": node["depth"] + 1,
+                "evaluation": self.utility(moveState, move) + node["depth"] + 1,
+                "parent": node
+            }
+            nodeList.append(nodeDict)
+        
+        return nodeList
+    
 
     ##
     #getMove
@@ -351,25 +362,42 @@ class AIPlayer(Player):
     #Return: The Move to be made
     ##
     def getMove(self, currentState):
-        print(str(self.utility(currentState, None)))
-        allMoves = listAllLegalMoves(currentState)
-        nodeList = []
+        frontierNodes = []
+        expandedNodes = []
 
-        # create list of GameState objects that result from
-        # making each legal move
+        rootNode = {
+            "move": None,
+            "state": currentState,
+            "depth": 0,
+            "evaluation": self.utility(currentState, None),
+            "parent": None
+        }
+        frontierNodes.append(rootNode)
 
-        for move in allMoves:
-            moveState = getNextState(currentState, move)
-            nodeDict = {
-                "move": move,
-                "state": moveState,
-                "depth": 1,
-                "evaluation": self.utility(moveState, move) + 1,
-                "parent": None
-            }
-            nodeList.append(nodeDict)
+        while (len(expandedNodes) < 100):
+            for node in frontierNodes:
+                """
+                print("Length")
+                print(type(node))
+                print(node["evaluation"])
+                print(type(node["evaluation"]))
+                """
+            nodeToExpand = min(frontierNodes, key = lambda node:node["evaluation"])
+            frontierNodes.remove(nodeToExpand)
+            expandedNodes.append(nodeToExpand)
+            newFrontierNodes = self.expandNode(nodeToExpand)
+            for newNode in newFrontierNodes:
+                frontierNodes.append(newNode)
         
-        return self.bestMove(nodeList)["move"]
+        print("Base Utility: " + str(rootNode["evaluation"]))
+        for node in frontierNodes:
+            print("New Utility: " + str(rootNode["evaluation"]))
+        
+        best_node = min(frontierNodes, key = lambda node:node["evaluation"])
+        while best_node["depth"] != 1:
+            best_node = best_node["parent"]
+        
+        return best_node["move"]
     
 
     ##
