@@ -163,7 +163,7 @@ class AIPlayer(Player):
         enemyWorkerAnts = getAntList(currentState, (playerID + 1) % 2, (WORKER,))
         enemyDroneAnts = getAntList(currentState, (playerID + 1) % 2, (DRONE,))
         
-        total_score = 0.1 * len(drones)
+        total_score = 0.15 * len(drones)
         #moves drones towards all ants except soldiers
         #priority is R_SOLDIERS, WORKERS, THEN DRONES
         #avoids drones
@@ -195,6 +195,7 @@ class AIPlayer(Player):
     #0.0-0.01 for having soldier well positioned
     #min is 0.0
     #max is 0.16
+    """
     def getSoldierScore(self, currentState, soldiers, playerID):
         # incentivises only 1 soldier
         if len(soldiers) == 0 or len(soldiers) > 1:
@@ -204,7 +205,7 @@ class AIPlayer(Player):
         enemyQueenAnts = getAntList(currentState, (playerID + 1) % 2, (QUEEN,))
 
         #rewards haveing soldier
-        total_score = 0.15 * len(soldiers)
+        total_score = 0.1 * len(soldiers)
 
         #moves soldiers toward drones
         for soldier in soldiers:
@@ -217,6 +218,7 @@ class AIPlayer(Player):
                 total_score += 0.01
 
         return total_score
+    """
     
 
     #utility
@@ -252,11 +254,11 @@ class AIPlayer(Player):
         droneScore = self.getDronesScore(currentState, droneAnts, me)
         #gets score based on soldiers position
         soldierAnts = getAntList(currentState, me, (SOLDIER,))
-        soldierScore = self.getSoldierScore(currentState, soldierAnts, me)
+        #soldierScore = self.getSoldierScore(currentState, soldierAnts, me)
         #gets score based on enemies ants
         enemyScore = self.getEnemyScore(currentState, me)
         #returns total score scaled to meet requirements of homework
-        return 0.54 * (foodScore + workersScore + queenScore + droneScore + soldierScore + penalty + enemyScore)
+        return 0.54 * (foodScore + workersScore + queenScore + droneScore + penalty + enemyScore)
 
 
     #bestMove
@@ -333,7 +335,12 @@ class AIPlayer(Player):
         else:
             return [(0, 0)]
 
-    
+    """
+    def expandNode(self, node):
+        all_moves = listAllLegalMoves(node["state"])
+        nodeList = []
+    """
+
     ##
     #getMove
     #Description: Gets the next move from the Player.
@@ -344,7 +351,7 @@ class AIPlayer(Player):
     #Return: The Move to be made
     ##
     def getMove(self, currentState):
-        print("Utility: " + str(self.utility(currentState, None)))
+        print(str(self.utility(currentState, None)))
         allMoves = listAllLegalMoves(currentState)
         nodeList = []
 
