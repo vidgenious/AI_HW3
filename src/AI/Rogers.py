@@ -232,7 +232,7 @@ class AIPlayer(Player):
         #penalizes standing state
         if move != None and move.moveType == MOVE_ANT and len(move.coordList) == 1 \
                 and getAntAt(currentState, move.coordList[-1]).type == WORKER:
-            return 0.0
+            return 1000
         #get necessary variables
         me = currentState.whoseTurn
         myInv = getCurrPlayerInventory(currentState)
@@ -257,7 +257,7 @@ class AIPlayer(Player):
         #gets score based on enemies ants
         enemyScore = self.getEnemyScore(currentState, me)
         #returns total score scaled to meet requirements of homework
-        return 400 * (0.54 * (foodScore + workersScore + queenScore + droneScore + penalty + enemyScore))
+        return 400 * (1 - .54 * (foodScore + workersScore + queenScore + droneScore + penalty + enemyScore))
 
 
     #bestMove
@@ -362,6 +362,7 @@ class AIPlayer(Player):
     #Return: The Move to be made
     ##
     def getMove(self, currentState):
+        
         frontierNodes = []
         expandedNodes = []
 
@@ -374,7 +375,7 @@ class AIPlayer(Player):
         }
         frontierNodes.append(rootNode)
 
-        while (len(expandedNodes) < 100):
+        while (len(expandedNodes) < 20):
             for node in frontierNodes:
                 """
                 print("Length")
@@ -382,6 +383,7 @@ class AIPlayer(Player):
                 print(node["evaluation"])
                 print(type(node["evaluation"]))
                 """
+                
             nodeToExpand = min(frontierNodes, key = lambda node:node["evaluation"])
             frontierNodes.remove(nodeToExpand)
             expandedNodes.append(nodeToExpand)
@@ -398,6 +400,7 @@ class AIPlayer(Player):
             best_node = best_node["parent"]
         
         return best_node["move"]
+        
     
 
     ##
