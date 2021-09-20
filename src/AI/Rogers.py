@@ -179,47 +179,6 @@ class AIPlayer(Player):
             total_score += 0.04
         return total_score
 
-    
-    #getSoldierScore
-    #
-    #score that is based on number and position of soldiers
-    #
-    #Parameters:
-    #   currentState - the current game state
-    #   soldiers - the list of soldiers the agent has
-    #   playerID - the id of the agent
-    #
-    #Returns the sum of 
-    #0.0-0.15 for having a soldier
-    #0.0-0.01 for having soldier well positioned
-    #min is 0.0
-    #max is 0.16
-    """
-    def getSoldierScore(self, currentState, soldiers, playerID):
-        # incentivises only 1 soldier
-        if len(soldiers) == 0 or len(soldiers) > 1:
-            return 0.0
-        # gets enemy drones
-        enemyDroneAnts = getAntList(currentState, (playerID + 1) % 2, (DRONE,))
-        enemyQueenAnts = getAntList(currentState, (playerID + 1) % 2, (QUEEN,))
-
-        #rewards haveing soldier
-        total_score = 0.1 * len(soldiers)
-
-        #moves soldiers toward drones
-        for soldier in soldiers:
-            if len(enemyDroneAnts) != 0:
-                total_score += 0.01 * (1/(1+min([approxDist(enemy.coords, soldier.coords) for enemy in enemyDroneAnts])))
-                continue
-            elif len(enemyQueenAnts) != 0:
-                total_score += 0.01 * (1/(1+approxDist(soldier.coords, getEnemyInv(None, currentState).getAnthill().coords)))
-            else:
-                total_score += 0.01
-
-        return total_score
-    """
-    
-
     #utility
     #
     #Parameters:
@@ -334,10 +293,20 @@ class AIPlayer(Player):
         else:
             return [(0, 0)]
 
-    
+    ##
+    #expandNode
+    #
+    #Description: expands a node and discovers adjacent nodes
+    #
+    #Parameters:
+    #node: the node to be expanded
+    #
+    #Returns a list of adjacent nodes
     def expandNode(self, node):
+        #gets all legal moves from a state
         allMoves = listAllLegalMoves(node["state"])
         nodeList = []
+        #goes through every move and makes a new node
         for move in allMoves:
             moveState = getNextState(node["state"], move)
             nodeDict = {
@@ -349,6 +318,7 @@ class AIPlayer(Player):
             }
             nodeList.append(nodeDict)
         
+        #returns all the new nodes
         return nodeList
     
 
@@ -362,10 +332,11 @@ class AIPlayer(Player):
     #Return: The Move to be made
     ##
     def getMove(self, currentState):
-        
+        #lists to store nodes
         frontierNodes = []
         expandedNodes = []
 
+        #creates a base node
         rootNode = {
             "move": None,
             "state": currentState,
@@ -375,15 +346,9 @@ class AIPlayer(Player):
         }
         frontierNodes.append(rootNode)
 
-        while (len(expandedNodes) < 20):
-            for node in frontierNodes:
-                """
-                print("Length")
-                print(type(node))
-                print(node["evaluation"])
-                print(type(node["evaluation"]))
-                """
-                
+        #expands 19 nodes before making a decision
+        while (len(expandedNodes) < 20): 
+            #expands node with lowest evalutation
             nodeToExpand = min(frontierNodes, key = lambda node:node["evaluation"])
             frontierNodes.remove(nodeToExpand)
             expandedNodes.append(nodeToExpand)
@@ -391,10 +356,7 @@ class AIPlayer(Player):
             for newNode in newFrontierNodes:
                 frontierNodes.append(newNode)
         
-        print("Base Utility: " + str(rootNode["evaluation"]))
-        for node in frontierNodes:
-            print("New Utility: " + str(rootNode["evaluation"]))
-        
+        #returns the best nodes parent
         best_node = min(frontierNodes, key = lambda node:node["evaluation"])
         while best_node["depth"] != 1:
             best_node = best_node["parent"]
