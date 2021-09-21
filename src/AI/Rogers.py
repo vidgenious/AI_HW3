@@ -161,6 +161,7 @@ class AIPlayer(Player):
         enemyHunterAnts = getAntList(currentState, (playerID + 1) % 2, (R_SOLDIER,))
         enemyWorkerAnts = getAntList(currentState, (playerID + 1) % 2, (WORKER,))
         enemyDroneAnts = getAntList(currentState, (playerID + 1) % 2, (DRONE,))
+        enemyQueenAnts = getAntList(currentState, (playerID + 1) % 2, (QUEEN,))
         
         total_score = 0.15 * len(drones)
         #moves drones towards all ants except soldiers
@@ -176,6 +177,9 @@ class AIPlayer(Player):
             if len(enemyDroneAnts) != 0:
                 total_score += 0.04 * (1/(1+min([approxDist(enemy.coords, drone.coords) for enemy in enemyDroneAnts])))
                 continue
+            if len(enemyQueenAnts) != 0:
+                total_score += 0.04 * (1/(1+min([approxDist(enemy.coords, drone.coords) for enemy in enemyDroneAnts])))
+                continue
             total_score += 0.04
         return total_score
 
@@ -186,6 +190,7 @@ class AIPlayer(Player):
     #   move - the move to get to the current game state
     #
     #Returns the utility of the given state
+    #Notes: score is not optimisticc to avoid negative scores which cause bad behavior
     def utility(self, currentState, move):
         penalty = 0.0
         #penalizes standing state
@@ -217,26 +222,6 @@ class AIPlayer(Player):
         enemyScore = self.getEnemyScore(currentState, me)
         #returns total score scaled to meet requirements of homework
         return 400 * (1 - .54 * (foodScore + workersScore + queenScore + droneScore + penalty + enemyScore))
-
-
-    #bestMove
-    #
-    #goes through valid moves and finds the best one
-    #
-    #Parameters:
-    #   nodeArray: list of all possible moves
-    #
-    #Returns the best possible move
-    def bestMove(self, nodeArray):
-        best_node = None
-        for node in nodeArray:
-            if best_node == None:
-                best_node = node
-                continue
-            node_utility = node["evaluation"]
-            if node_utility > best_node["evaluation"]:
-                best_node = node
-        return best_node
 
 
     ##
