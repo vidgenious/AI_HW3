@@ -178,7 +178,7 @@ class AIPlayer(Player):
                 total_score += 0.04 * (1/(1+min([approxDist(enemy.coords, drone.coords) for enemy in enemyDroneAnts])))
                 continue
             if len(enemyQueenAnts) != 0:
-                total_score += 0.04 * (1/(1+min([approxDist(enemy.coords, drone.coords) for enemy in enemyDroneAnts])))
+                total_score += 0.04 * (1/(1+min([approxDist(enemy.coords, drone.coords) for enemy in enemyQueenAnts])))
                 continue
             total_score += 0.04
         return total_score
@@ -420,17 +420,8 @@ class testRogers(unittest.TestCase):
     def testDroneScore(self):
         newDrone = Ant([random.randint(0,9), random.randint(0,9)], DRONE, 0)
         drones = [newDrone]
-        self.assertEqual(self.rogers.getDronesScore(self.state, drones, 0), 0.14,
-            "1 drone/0 enemy ants did not return expected value of 0.14")
-
-
-    ## test getSoldierScore() method
-    def testSoldierScore(self):
-        newSoldier = Ant([random.randint(0,9), random.randint(0,9)], SOLDIER, 0)
-        soldiers = [newSoldier]
-        self.assertAlmostEqual(self.rogers.getSoldierScore(self.state, soldiers, 0), 0.15, 1,
-            "1 soldier/0 enemy ants did not return expected value of 0.15")
-
+        self.assertGreaterEqual(self.rogers.getDronesScore(self.state, drones, 0), 0.15,
+            "1 drone/1 queen ant returned value less than 0.15")
 
     ## test utility() method
     def testUtility(self):
@@ -438,12 +429,11 @@ class testRogers(unittest.TestCase):
         utility = self.rogers.utility(self.state, move)
         self.assertGreaterEqual(utility, 0.0,
             "Utility is less than 0.0")
-        self.assertLessEqual(utility, 1.0,
-            "Utility is greater than 1.0")
+        self.assertLessEqual(utility, 400.0,
+            "Utility is greater than 400.0")
 
-
-    ## test bestMove() method
-    def testBestMove(self):
+    ## test expandNode() method
+    def testExpandNode(self):
         node = {
             "move": Move(MOVE_ANT, [random.randint(0,9), random.randint(0,9)], None),
             "state": self.state,
@@ -451,9 +441,8 @@ class testRogers(unittest.TestCase):
             "evaluation": random.random(),
             "parent": None
         }
-        nodeArray = [node]
-        assert self.rogers.bestMove(nodeArray) == node
-
+        nodeArray = self.rogers.expandNode(node)
+        self.assertEqual(len(nodeArray), 10, "Discovered nodes does not equal 10")
 
 if __name__ == '__main__':
     unittest.main()
