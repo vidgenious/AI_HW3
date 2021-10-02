@@ -293,7 +293,7 @@ class AIPlayer(Player):
         nodeList = []
         #goes through every move and makes a new node
         for move in allMoves:
-            moveState = getNextState(node["state"], move)
+            moveState = getNextStateAdversarial(node["state"], move)
             nodeDict = {
                 "move": move,
                 "state": moveState,
@@ -331,22 +331,65 @@ class AIPlayer(Player):
         }
         frontierNodes.append(rootNode)
 
+        depthIsOkay = True
         #expands 19 nodes before making a decision
-        while (len(expandedNodes) < 20): 
-            #expands node with lowest evalutation
-            nodeToExpand = min(frontierNodes, key = lambda node:node["evaluation"])
-            frontierNodes.remove(nodeToExpand)
-            expandedNodes.append(nodeToExpand)
-            newFrontierNodes = self.expandNode(nodeToExpand)
-            for newNode in newFrontierNodes:
-                frontierNodes.append(newNode)
+        while (depthIsOkay): 
+            print("running frontier")
+            for nodeToExpand in frontierNodes:
+                if nodeToExpand["depth"] == 4:
+                    depthIsOkay = False
+                    break             
+                frontierNodes.remove(nodeToExpand)
+                expandedNodes.append(nodeToExpand)
+                newFrontierNodes = self.expandNode(nodeToExpand)
+                for newNode in newFrontierNodes:
+                    frontierNodes.append(newNode)
+
+        print(len(frontierNodes))
         
-        #returns the best nodes parent
-        best_node = min(frontierNodes, key = lambda node:node["evaluation"])
-        while best_node["depth"] != 1:
-            best_node = best_node["parent"]
-        
-        return best_node["move"]
+        finalChoice = None
+        upperLevel = []
+        currentEvaluation = []
+        currentDepth = 3
+        loopState = 0
+        while(True):
+            #print("Running finding---------------------------------------------------------------------------------")
+            for node in frontierNodes:
+                #print("ooh Nodes")
+                if loopState == 0:
+                    currentParent = node["parent"]
+                    currentEvaluation.append(node)
+                    frontierNodes.remove(node)
+                    loopState = 1
+                            
+                elif loopState == 1:
+                    if node["parent"] == currentParent:
+                        currentEvaluation.append(node)
+                        frontierNodes.remove(node)
+            if node["parent"]["state"].whoseTurn == currentState.whoseTurn:
+                tempNode = max(currentEvaluation, key = lambda node:node["evaluation"])
+            else:
+                tempNode = min(currentEvaluation, key = lambda node:node["evaluation"])
+            tempNode["parent"]["evaluation"] = tempNode["evaluation"]
+            upperLevel.append(tempNode["parent"])
+            loopState = 0
+
+            print(len(frontierNodes))
+            if (not frontierNodes) and currentDepth == 1:
+                print("I'M FREE!")
+                finalChoice = max(upperLevel, key = lambda node:node["evaluation"])
+                break
+            elif frontierNodes == []:
+                print("wowee")
+                currentDepth -= 1
+                frontierNodes = upperLevel
+                upperLevel = []
+                loopState = 0
+
+
+      
+                     
+        return finalChoice["move"]
         
     
 
