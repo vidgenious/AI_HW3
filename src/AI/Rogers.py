@@ -299,7 +299,9 @@ class AIPlayer(Player):
                 "state": moveState,
                 "depth": node["depth"] + 1,
                 "evaluation": self.utility(moveState, move) + node["depth"] + 1,
-                "parent": node
+                "parent": node,
+                "minimax": None,
+                "seen": False
             }
             nodeList.append(nodeDict)
         
@@ -327,27 +329,61 @@ class AIPlayer(Player):
             "state": currentState,
             "depth": 0,
             "evaluation": self.utility(currentState, None),
-            "parent": None
+            "parent": None,
+            "minimax": None,
+            "seen": False
         }
         frontierNodes.append(rootNode)
-
-        depthIsOkay = True
-        #expands 19 nodes before making a decision
-        while (depthIsOkay): 
-            print("running frontier")
-            for nodeToExpand in frontierNodes:
-                if nodeToExpand["depth"] == 4:
-                    depthIsOkay = False
-                    break             
+ 
+        #print("running frontier")
+        for nodeToExpand in frontierNodes:
+            if nodeToExpand["depth"] < 4:          
                 frontierNodes.remove(nodeToExpand)
                 expandedNodes.append(nodeToExpand)
-                newFrontierNodes = self.expandNode(nodeToExpand)
-                for newNode in newFrontierNodes:
-                    frontierNodes.append(newNode)
+                if nodeToExpand["depth"] < 3:
+                    newFrontierNodes = self.expandNode(nodeToExpand)
+                    for newNode in newFrontierNodes:
+                        frontierNodes.append(newNode)
 
-        print(len(frontierNodes))
+
+        #print(len(expandedNodes))
+
+        nodeDepth = 3
+        while (nodeDepth != 1):
+            for node in expandedNodes:
+                if node["depth"] == nodeDepth:
+                    # if parent is our turn, calculate max
+                    if node["parent"]["state"].whoseTurn == currentState.whoseTurn:
+                        if not node["parent"]["minimax"] or node["evaluation"] < node["parent"]["minimax"]:
+                            #print(node["parent"]["minimax"])
+                            node["parent"]["minimax"] = node["evaluation"]
+                            node["parent"]["seen"] = True
+                            #print(node["parent"]["minimax"])
+                        #print("Passed if statement")
+                    else:
+                        # if parent is opponent's turn, calculate min
+                        if not node["parent"]["minimax"] or node["evaluation"] > node["parent"]["minimax"]:
+                            node["parent"]["minimax"] = node["evaluation"]
+                            node["parent"]["seen"] = True
+                    expandedNodes.remove(node)
+                print(node["depth"])
+            nodeDepth -= 1
+            #print("Lowered nodeDepth")
+
+        print("---------------------------------")
+        firstMoves = []
+        for node in expandedNodes:
+            if node["depth"] == 1:
+                firstMoves.append(node)
+                #print(node)
+        #print("---------------------------------")
+        bestMove = min(firstMoves, key = lambda node:node["minimax"])["move"]
+
+        return bestMove
+
+
         
-        finalChoice = None
+        """finalChoice = None
         upperLevel = []
         currentEvaluation = []
         currentDepth = 3
@@ -389,7 +425,7 @@ class AIPlayer(Player):
 
       
                      
-        return finalChoice["move"]
+        return finalChoice["move"]"""
         
     
 
