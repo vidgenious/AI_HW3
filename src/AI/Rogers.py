@@ -337,13 +337,17 @@ class AIPlayer(Player):
  
         #print("running frontier")
         for nodeToExpand in frontierNodes:
-            if nodeToExpand["depth"] < 4:          
+            if nodeToExpand["depth"] < 4:
+                print("yo")          
                 frontierNodes.remove(nodeToExpand)
                 expandedNodes.append(nodeToExpand)
                 if nodeToExpand["depth"] < 3:
+                    print("yo")
                     newFrontierNodes = self.expandNode(nodeToExpand)
+                    print(len(newFrontierNodes))
                     for newNode in newFrontierNodes:
                         frontierNodes.append(newNode)
+        
 
 
         #print(len(expandedNodes))
@@ -353,31 +357,40 @@ class AIPlayer(Player):
             for node in expandedNodes:
                 if node["depth"] == nodeDepth:
                     # if parent is our turn, calculate max
+                    # print (node["parent"]["state"].whoseTurn, "   ", currentState.whoseTurn)
                     if node["parent"]["state"].whoseTurn == currentState.whoseTurn:
-                        if not node["parent"]["minimax"] or node["evaluation"] < node["parent"]["minimax"]:
-                            #print(node["parent"]["minimax"])
-                            node["parent"]["minimax"] = node["evaluation"]
+                        # print("mine")
+                        # print(node["evaluation"], "   ", node["parent"]["evaluation"])
+                        if not node["parent"]["evaluation"] or node["evaluation"] < node["parent"]["evaluation"]:
+                            #print(node["parent"]["evaluation"])
+                            node["parent"]["evaluation"] = node["evaluation"]
                             node["parent"]["seen"] = True
-                            #print(node["parent"]["minimax"])
+                            #print(node["parent"]["evaluation"])
                         #print("Passed if statement")
                     else:
+                        # print("theirs")
                         # if parent is opponent's turn, calculate min
-                        if not node["parent"]["minimax"] or node["evaluation"] > node["parent"]["minimax"]:
-                            node["parent"]["minimax"] = node["evaluation"]
+                        # print(node["evaluation"], "   ", node["parent"]["evaluation"])
+                        if not node["parent"]["evaluation"] or node["evaluation"] > node["parent"]["evaluation"]:
+                            node["parent"]["evaluation"] = node["evaluation"]
                             node["parent"]["seen"] = True
-                    expandedNodes.remove(node)
-                print(node["depth"])
+                    if(node["depth"] != 1 and node["depth"] !=0):
+                        expandedNodes.remove(node)
+                #     if node["evaluation"] == None:
+                #         print(None)
+                # print(node["depth"])
             nodeDepth -= 1
             #print("Lowered nodeDepth")
 
         print("---------------------------------")
         firstMoves = []
         for node in expandedNodes:
+            # print(node["depth"])
             if node["depth"] == 1:
                 firstMoves.append(node)
                 #print(node)
         #print("---------------------------------")
-        bestMove = min(firstMoves, key = lambda node:node["minimax"])["move"]
+        bestMove = min(firstMoves, key = lambda node:node["evaluation"])["move"]
 
         return bestMove
 
