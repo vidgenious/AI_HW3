@@ -29,7 +29,7 @@ class AIPlayer(Player):
     #   cpy           - whether the player is a copy (when playing itself)
     ##
     def __init__(self, inputPlayerId):
-        super(AIPlayer,self).__init__(inputPlayerId, "RogersWasTheChosenOne")
+        super(AIPlayer,self).__init__(inputPlayerId, "RogersHasFallen")
 
 
     #getFoodScore
@@ -158,7 +158,7 @@ class AIPlayer(Player):
             return 0.0
         #gets enemy ants
         #enemySoldierAnts = getAntList(currentState, (playerID + 1) % 2, (SOLDIER,))
-        enemyHunterAnts = getAntList(currentState, (playerID + 1) % 2, (R_SOLDIER,))
+        #enemyHunterAnts = getAntList(currentState, (playerID + 1) % 2, (R_SOLDIER,))
         enemyWorkerAnts = getAntList(currentState, (playerID + 1) % 2, (WORKER,))
         enemyDroneAnts = getAntList(currentState, (playerID + 1) % 2, (DRONE,))
         enemyQueenAnts = getAntList(currentState, (playerID + 1) % 2, (QUEEN,))
@@ -168,9 +168,9 @@ class AIPlayer(Player):
         #priority is R_SOLDIERS, WORKERS, THEN DRONES
         #avoids drones
         for drone in drones:
-            if len(enemyHunterAnts) != 0:
-                total_score += 0.04 * (1/(1+min([approxDist(enemy.coords, drone.coords) for enemy in enemyHunterAnts])))
-                continue
+            #if len(enemyHunterAnts) != 0:
+                #total_score += 0.04 * (1/(1+min([approxDist(enemy.coords, drone.coords) for enemy in enemyHunterAnts])))
+                #continue
             if len(enemyWorkerAnts) != 0:
                 total_score += 0.04 * (1/(1+min([approxDist(enemy.coords, drone.coords) for enemy in enemyWorkerAnts])))
                 continue
@@ -182,6 +182,7 @@ class AIPlayer(Player):
                 continue
             total_score += 0.04
         return total_score
+        
 
     #utility
     #
@@ -190,7 +191,7 @@ class AIPlayer(Player):
     #   move - the move to get to the current game state
     #
     #Returns the utility of the given state
-    #Notes: score is not optimisticc to avoid negative scores which cause bad behavior
+    #Notes: score is not optimistic to avoid negative scores which cause bad behavior
     def utility(self, currentState, move):
         penalty = 0.0
 
@@ -221,10 +222,6 @@ class AIPlayer(Player):
         #gets score based on drones position
         droneAnts = getAntList(currentState, me, (DRONE,))
         droneScore = self.getDronesScore(currentState, droneAnts, me)
-
-        #gets score based on soldiers position
-        #soldierAnts = getAntList(currentState, me, (SOLDIER,))
-        #soldierScore = self.getSoldierScore(currentState, soldierAnts, me)
 
         #gets score based on enemies ants
         enemyScore = self.getEnemyScore(currentState, me)
@@ -309,8 +306,8 @@ class AIPlayer(Player):
                 "depth": node["depth"] + 1,
                 "evaluation": self.utility(moveState, move) + node["depth"] + 1,
                 "parent": node,
-                "minimaxLow": -100,
-                "minimaxHigh": 10000
+                "min": -100,
+                "max": 10000
             }
             nodeList.append(nodeDict)
         
@@ -339,48 +336,39 @@ class AIPlayer(Player):
             "depth": 0,
             "evaluation": self.utility(currentState, None),
             "parent": None,
-            "minimaxLow": -100,
-            "minimaxHigh": 10000
+            "min": -100,
+            "max": 10000
         }
         frontierNodes.append(rootNode)
 
-
+        # expand all nodes down to depth 3
         for nodeToExpand in frontierNodes:
-            print("first for")
             if nodeToExpand["depth"] < 4:      
                 frontierNodes.remove(nodeToExpand)
                 expandedNodes.append(nodeToExpand)
                 if nodeToExpand["depth"] < 3:
-                    # frontierNodes = self.expandNode(nodeToExpand) + frontierNodes
-
-
                     newFrontierNodes = self.expandNode(nodeToExpand)
                     for newNode in newFrontierNodes:
                         frontierNodes.append(newNode)
     
 
-
+        # perform minimax
         nodeDepth = 3
         while (nodeDepth != 1):
-            print("2nd while")
             for node in expandedNodes:
                 if node["depth"] == nodeDepth:
-                    # if parent is our turn, calculate max
                     if node["parent"]["state"].whoseTurn == currentState.whoseTurn:
-                        if not node["parent"]["evaluation"] or node["evaluation"] < node["parent"]["evaluation"]:
+                        if node["evaluation"] < node["parent"]["evaluation"]:
                             node["parent"]["evaluation"] = node["evaluation"]
-                            node["parent"]["seen"] = True
                     else:
-                        # if parent is opponent's turn, calculate min
-                        if not node["parent"]["evaluation"] or node["evaluation"] > node["parent"]["evaluation"]:
+                        if node["evaluation"] < node["parent"]["evaluation"]:
                             node["parent"]["evaluation"] = node["evaluation"]
-                            node["parent"]["seen"] = True
-                    if(node["depth"] != 1 and node["depth"] !=0):
-                        expandedNodes.remove(node)
+                    expandedNodes.remove(node)
             nodeDepth -= 1
 
         firstMoves = []
         
+        # pick best move out of nodes at depth 1
         if len(expandedNodes) == 1:
             bestMove = frontierNodes[0]["move"]
         else:
@@ -391,53 +379,6 @@ class AIPlayer(Player):
 
 
         return bestMove
-
-
-        
-        """finalChoice = None
-        upperLevel = []
-        currentEvaluation = []
-        currentDepth = 3
-        loopState = 0
-        while(True):
-            #print("Running finding---------------------------------------------------------------------------------")
-            for node in frontierNodes:
-                #print("ooh Nodes")
-                if loopState == 0:
-                    currentParent = node["parent"]
-                    currentEvaluation.append(node)
-                    frontierNodes.remove(node)
-                    loopState = 1
-                            
-                elif loopState == 1:
-                    if node["parent"] == currentParent:
-                        currentEvaluation.append(node)
-                        frontierNodes.remove(node)
-            if node["parent"]["state"].whoseTurn == currentState.whoseTurn:
-                tempNode = max(currentEvaluation, key = lambda node:node["evaluation"])
-            else:
-                tempNode = min(currentEvaluation, key = lambda node:node["evaluation"])
-            tempNode["parent"]["evaluation"] = tempNode["evaluation"]
-            upperLevel.append(tempNode["parent"])
-            loopState = 0
-
-            print(len(frontierNodes))
-            if (not frontierNodes) and currentDepth == 1:
-                print("I'M FREE!")
-                finalChoice = max(upperLevel, key = lambda node:node["evaluation"])
-                break
-            elif frontierNodes == []:
-                print("wowee")
-                currentDepth -= 1
-                frontierNodes = upperLevel
-                upperLevel = []
-                loopState = 0
-
-
-      
-                     
-        return finalChoice["move"]"""
-        
     
 
     ##
