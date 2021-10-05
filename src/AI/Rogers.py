@@ -193,33 +193,42 @@ class AIPlayer(Player):
     #Notes: score is not optimisticc to avoid negative scores which cause bad behavior
     def utility(self, currentState, move):
         penalty = 0.0
+
         #penalizes standing state
         if move != None and move.moveType == MOVE_ANT and len(move.coordList) == 1 \
                 and getAntAt(currentState, move.coordList[-1]).type == WORKER:
             return 1000
+        
         #get necessary variables
         me = currentState.whoseTurn
         myInv = getCurrPlayerInventory(currentState)
+
         #evaluates food score and terminates if winning move is found
         foodScore = self.getFoodScore(myInv.foodCount)
         if foodScore == 1.0:
             return foodScore
+        
         #gets score based on workers position
         workerAnts = getAntList(currentState, me, (WORKER,))
         workersScore = self.getWorkersScore(currentState, workerAnts, myInv)
+
         #gets score based on queens position
         queenAnts = getAntList(currentState, me, (QUEEN,))
         if len(queenAnts) == 0:
             return 1.0
         queenScore = self.getQueenScore(currentState, queenAnts[0], myInv)
+
         #gets score based on drones position
         droneAnts = getAntList(currentState, me, (DRONE,))
         droneScore = self.getDronesScore(currentState, droneAnts, me)
+
         #gets score based on soldiers position
-        soldierAnts = getAntList(currentState, me, (SOLDIER,))
+        #soldierAnts = getAntList(currentState, me, (SOLDIER,))
         #soldierScore = self.getSoldierScore(currentState, soldierAnts, me)
+
         #gets score based on enemies ants
         enemyScore = self.getEnemyScore(currentState, me)
+
         #returns total score scaled to meet requirements of homework
         return 400 * (1 - .54 * (foodScore + workersScore + queenScore + droneScore + penalty + enemyScore))
 
@@ -300,8 +309,8 @@ class AIPlayer(Player):
                 "depth": node["depth"] + 1,
                 "evaluation": self.utility(moveState, move) + node["depth"] + 1,
                 "parent": node,
-                "minimax": None,
-                "seen": False
+                "minimaxLow": -100,
+                "minimaxHigh": 10000
             }
             nodeList.append(nodeDict)
         
@@ -330,67 +339,56 @@ class AIPlayer(Player):
             "depth": 0,
             "evaluation": self.utility(currentState, None),
             "parent": None,
-            "minimax": None,
-            "seen": False
+            "minimaxLow": -100,
+            "minimaxHigh": 10000
         }
         frontierNodes.append(rootNode)
- 
-        #print("running frontier")
+
+
         for nodeToExpand in frontierNodes:
-            if nodeToExpand["depth"] < 4:
-                print("yo")          
+            print("first for")
+            if nodeToExpand["depth"] < 4:      
                 frontierNodes.remove(nodeToExpand)
                 expandedNodes.append(nodeToExpand)
                 if nodeToExpand["depth"] < 3:
-                    print("yo")
+                    # frontierNodes = self.expandNode(nodeToExpand) + frontierNodes
+
+
                     newFrontierNodes = self.expandNode(nodeToExpand)
-                    print(len(newFrontierNodes))
                     for newNode in newFrontierNodes:
                         frontierNodes.append(newNode)
-        
+    
 
-
-        #print(len(expandedNodes))
 
         nodeDepth = 3
         while (nodeDepth != 1):
+            print("2nd while")
             for node in expandedNodes:
                 if node["depth"] == nodeDepth:
                     # if parent is our turn, calculate max
-                    # print (node["parent"]["state"].whoseTurn, "   ", currentState.whoseTurn)
                     if node["parent"]["state"].whoseTurn == currentState.whoseTurn:
-                        # print("mine")
-                        # print(node["evaluation"], "   ", node["parent"]["evaluation"])
                         if not node["parent"]["evaluation"] or node["evaluation"] < node["parent"]["evaluation"]:
-                            #print(node["parent"]["evaluation"])
                             node["parent"]["evaluation"] = node["evaluation"]
                             node["parent"]["seen"] = True
-                            #print(node["parent"]["evaluation"])
-                        #print("Passed if statement")
                     else:
-                        # print("theirs")
                         # if parent is opponent's turn, calculate min
-                        # print(node["evaluation"], "   ", node["parent"]["evaluation"])
                         if not node["parent"]["evaluation"] or node["evaluation"] > node["parent"]["evaluation"]:
                             node["parent"]["evaluation"] = node["evaluation"]
                             node["parent"]["seen"] = True
                     if(node["depth"] != 1 and node["depth"] !=0):
                         expandedNodes.remove(node)
-                #     if node["evaluation"] == None:
-                #         print(None)
-                # print(node["depth"])
             nodeDepth -= 1
-            #print("Lowered nodeDepth")
 
-        print("---------------------------------")
         firstMoves = []
-        for node in expandedNodes:
-            # print(node["depth"])
-            if node["depth"] == 1:
-                firstMoves.append(node)
-                #print(node)
-        #print("---------------------------------")
-        bestMove = min(firstMoves, key = lambda node:node["evaluation"])["move"]
+        
+        if len(expandedNodes) == 1:
+            bestMove = frontierNodes[0]["move"]
+        else:
+            for node in expandedNodes:
+                if node["depth"] == 1:
+                    firstMoves.append(node)
+            bestMove = min(firstMoves, key = lambda node:node["evaluation"])["move"]
+
 
         return bestMove
 
